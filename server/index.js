@@ -1,12 +1,36 @@
+require('newrelic');
 const express = require('express');
 const path = require('path');
 const proxy = require('express-http-proxy');
 const cors = require('cors');
+
+// clusters
+// const cluster = require('cluster');
+// const numCPUs = require('os').cpus().length;
+
+// if (cluster.isMaster) {
+//   console.log(`Master ${process.pid} is running`);
+  
+//   // Fork workers.
+//   for (let i = 0; i < numCPUs; i++) {
+//     cluster.fork();
+//   }
+  
+//   cluster.on('exit', (worker, code, signal) => {
+//     console.log(`worker ${worker.process.pid} died`);
+//   });
+//   return;
+// }
+
 const app = express();
 const PORT = 3000;
+app.listen(PORT, () => {
+  console.log(`Server listening on port http://localhost:${PORT}`);
+});
 
 app.use(cors());
 app.use(express.static(__dirname + '/../client'));
+
 
 app.use('/proxy', proxy('www.google.com', {
   filter: function(req, res) {
@@ -31,11 +55,12 @@ app.use('/rooms', proxy('http://localhost:3002', {
 }));
 
 app.use('/hostInfo', proxy('http://localhost:3006', {
+  parseReqBody: false,
   proxyReqPathResolver: function (req) {
     let parts = req.url.split('?');
     let queryString = parts[1];
     let pathname = req.url.split('/')[1];
-    console.log('🏓 host', parts, queryString, '🪀', pathname)
+    // console.log('🏓 host', parts, queryString, '🪀', pathname)
     return !pathname ? '/' : `/hostInfo/${pathname}`;
   }
 }));
@@ -76,6 +101,4 @@ app.use('/location', proxy('http://localhost:3005', {
   }
 }));
 
-app.listen(PORT, () => {
-  console.log(`Proxy Server listening on port http://localhost:${PORT}`);
-});
+
